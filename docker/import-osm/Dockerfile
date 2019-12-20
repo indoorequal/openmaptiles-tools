@@ -9,7 +9,7 @@ ARG PG_MAJOR="11"
 
 # Current version, disable for now
 ARG IMPOSM_REPO="https://github.com/omniscale/imposm3.git"
-ARG IMPOSM_VERSION="v0.8.1"
+ARG IMPOSM_VERSION="v0.10.0"
 
 
 ENV IMPORT_DIR=/import \
