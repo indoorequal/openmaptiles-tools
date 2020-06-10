@@ -34,6 +34,50 @@ class RequestHandledWithCors(RequestHandler):
         # We must implement it to support QGIS
         self.finish()
 
+class GetPoi(RequestHandledWithCors):
+    pool: Pool
+    query: str
+    verbose: bool
+    connection: Union[Connection, None]
+    cancelled: bool
+
+    def initialize(self, pool, verbose):
+        self.pool = pool
+        self.verbose = verbose
+
+    async def get(self, type, id):
+        messages: List[PostgresLogMessage] = []
+
+        def logger(_, log_msg: PostgresLogMessage):
+            messages.append(log_msg)
+
+        self.set_header("Content-Type", "application/json")
+        try:
+            async with self.pool.acquire() as connection:
+                connection.add_log_listener(logger)
+                self.connection = connection
+                query = """SELECT get_poi($1);"""
+                geojson = await connection.fetchval(query, f"{type}:{id}")
+                if geojson is not None:
+                    self.write(geojson)
+                else:
+                    self.set_status(404)
+                for msg in messages:
+                    PgWarnings.print_message(msg)
+                connection.remove_log_listener(logger)
+
+        except ConnectionDoesNotExistError as err:
+            if not self.cancelled:
+                raise err
+            elif self.verbose:
+                print(f"GET POI {type}:{id} was cancelled.")
+        finally:
+            self.connection = None
+
+    def on_connection_close(self):
+        if self.connection:
+            self.cancelled = True
+            self.connection.terminate()
 
 class GetTile(RequestHandledWithCors):
     pool: Pool
@@ -280,6 +324,11 @@ class Postserve:
                 r"/",
                 GetMetadata,
                 dict(metadata=self.metadata)
+            ),
+            (
+                r"/poi/(way|relation|node):([0-9]+)",
+                GetPoi,
+                dict(pool=self.pool, verbose=self.verbose)
             ),
             (
                 r"/tiles/([0-9]+)/([0-9]+)/([0-9]+).pbf",
