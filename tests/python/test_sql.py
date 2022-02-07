@@ -101,15 +101,15 @@ $$ LANGUAGE SQL IMMUTABLE;
         self._test('a20', [c14], dict(c14=[c14]))
 
     def test_var_substitution(self):
-        vars = dict(vars=dict(var_substitution_1=14, var_substitution_2='az'))
+        variables = dict(vars=dict(var_substitution_1=14, var_substitution_2='az'))
         data = parsed_data(Case('my_id', ''))
-        data.data['tileset']['layers'][0]['file'].data['layer'].update(vars)
+        data.data['tileset']['layers'][0]['file'].data['layer'].update(variables)
         ts = Tileset(data)
         layer = ts.layers_by_id['my_id']
 
         self.assertEqual(to_sql('SELECT * from test where zoom > %%VAR:var_substitution_1%%', layer, False), 'SELECT * from test where zoom > 14')
         self.assertEqual(to_sql("SELECT * from test where zoom > '%%VAR:var_substitution_2%%'", layer, False), "SELECT * from test where zoom > 'az'")
-        self.assertRaises(ValueError, to_sql, 'SELECT * from test where zoom > %%VAR:var_substitution_3%%', layer, False)
+        self.assertRaises(KeyError, to_sql, 'SELECT * from test where zoom > %%VAR:var_substitution_3%%', layer, False)
 
 
 if __name__ == '__main__':

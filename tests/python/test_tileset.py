@@ -6,9 +6,9 @@ from tests.python.test_helpers import Case, parsed_data
 from openmaptiles.tileset import Tileset
 
 
-class TileseTestCase(TestCase):
-    def _ts_overrides(self,
-                      layer: Optional[dict] = None,
+class TilesTestCase(TestCase):
+    @staticmethod
+    def _ts_overrides(layer: Optional[dict] = None,
                       override_ts: Optional[dict] = None,
                       override_layer: Optional[dict] = None,
                       env: Optional[dict] = None):
@@ -110,44 +110,44 @@ class TileseTestCase(TestCase):
                        ['c1'], ['a', 'b'], ['x', 'y'], extra)
 
     def _assert_layer_vars(self, expected_vars: dict,
-                           layer: Optional[dict] = None,
+                           layer_vars: Optional[dict] = None,
                            override_ts: Optional[dict] = None,
                            override_layer: Optional[dict] = None,
                            env: Optional[dict] = None):
-        ts = self._ts_overrides(layer, override_ts, override_layer, env)
+        ts = self._ts_overrides(
+            dict(vars=layer_vars) if layer_vars is not None else None,
+            dict(vars=override_ts) if override_ts is not None else None,
+            dict(vars=override_layer) if override_layer is not None else None,
+            env)
 
         for k in expected_vars.keys():
-            self.assertEqual(ts.layers_by_id['my_id'].vars.get(k), expected_vars[k])
+            self.assertEqual(ts.layers_by_id['my_id'].get_var(k), expected_vars[k])
 
     def test_layer_var(self):
-        data = parsed_data([Case('my_id', 'my_query;')])
-        ts = Tileset(data)
-        self.assertEqual(ts.layers_by_id['my_id'].vars, {})
         self._assert_layer_vars(dict(custom_zoom=None))
-        self._assert_layer_vars(dict(custom_zoom=14),
-                                dict(vars=dict(custom_zoom=14)))
-        self._assert_layer_vars(dict(custom_zoom=12),
-                                dict(vars=dict(custom_zoom=14)),
-                                override_layer=dict(vars=dict(custom_zoom=12)))
-        self._assert_layer_vars(dict(custom_zoom=12),
-                                dict(vars=dict(custom_zoom=14)),
-                                override_ts=dict(vars=dict(custom_zoom=12)))
-        self._assert_layer_vars(dict(custom_zoom=None),
-                                dict(),
-                                override_ts=dict(vars=dict(custom_zoom=12)))
-        self._assert_layer_vars(dict(custom_zoom=13),
-                                dict(vars=dict(custom_zoom=14)),
-                                override_layer=dict(vars=dict(custom_zoom=13)),
-                                override_ts=dict(vars=dict(custom_zoom=12)))
+        self._assert_layer_vars(dict(custom_zoom='14'),
+                                layer_vars=dict(custom_zoom=14))
+        self._assert_layer_vars(dict(custom_zoom='12'),
+                                layer_vars=dict(custom_zoom=14),
+                                override_layer=dict(custom_zoom=12))
+        self._assert_layer_vars(dict(custom_zoom='12'),
+                                layer_vars=dict(custom_zoom=14),
+                                override_ts=dict(custom_zoom=12))
+        self._assert_layer_vars(dict(custom_zoom='13'),
+                                layer_vars=dict(custom_zoom=14),
+                                override_layer=dict(custom_zoom=13),
+                                override_ts=dict(custom_zoom=12))
+        self.assertRaises(ValueError, self._assert_layer_vars,
+                          dict(custom_zoom=None),
+                          layer_vars=dict(),
+                          override_ts=dict(custom_zoom=12))
         self.assertRaises(ValueError, self._assert_layer_vars,
                           dict(custom_zoom=14),
-                          dict(vars=dict(custom_zoom=14)),
-                          override_layer=dict(vars=dict(custom_zoom2=12)))
-
-        env = dict(OMT_VAR_custom_zoom=12)
+                          layer_vars=dict(custom_zoom=14),
+                          override_layer=dict(custom_zoom2=12))
         self._assert_layer_vars(dict(custom_zoom=12),
                                 dict(vars=dict(custom_zoom=13)),
-                                env=env)
+                                env=dict(OMT_VAR_custom_zoom=12))
 
 
 if __name__ == '__main__':
