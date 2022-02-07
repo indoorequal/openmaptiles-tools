@@ -109,7 +109,7 @@ $$ LANGUAGE SQL IMMUTABLE;
 
         self.assertEqual(to_sql('SELECT * from test where zoom > %%VAR:var_substitution_1%%', layer, False), 'SELECT * from test where zoom > 14')
         self.assertEqual(to_sql("SELECT * from test where zoom > '%%VAR:var_substitution_2%%'", layer, False), "SELECT * from test where zoom > 'az'")
-        self.assertRaises(KeyError, to_sql, 'SELECT * from test where zoom > %%VAR:var_substitution_3%%', layer, False)
+        self.assertRaises(ValueError, to_sql, 'SELECT * from test where zoom > %%VAR:var_substitution_3%%', layer, False)
 
 
 if __name__ == '__main__':

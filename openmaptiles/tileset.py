@@ -173,19 +173,23 @@ class Layer:
             # osm_id column twice - once for feature_id, and once as an attribute
             raise ValueError('key_field_as_attribute=yes is not yet implemented')
 
+        self._vars = self._assemble_vars()
+
+    def _assemble_vars(self) -> Dict[str, str]:
         # Compute layer variables including the override logic.
         # Priority order (last wins):  layer, tileset global, tileset per layer, env vars
-        self._vars = self.definition['layer'].get('vars', {})
+        result = self.definition['layer'].get('vars', {})
         if self.tileset:
             for name, value in self.tileset.overrides.get('vars', {}).items():
-                if name in self._vars:
-                    self._vars[name] = value
+                if name in result:
+                    result[name] = value
         for name, value in self.overrides.get('vars', {}).items():
-            if name not in self._vars:
+            if name not in result:
                 raise ValueError(f'Layer override variable "{name}" is not defined in the layer')
-            self._vars[name] = value
-        for name in self._vars.keys():
-            self._vars[name] = self.getenv(f'OMT_VAR_{name}', self._vars[name])
+            result[name] = value
+        for name in result.keys():
+            result[name] = self.getenv(f'OMT_VAR_{name}', result[name])
+        return result
 
     def getenv(self, name: str, default: str = '') -> str:
         # Allow empty env var to be the same as unset.
@@ -326,6 +330,8 @@ class Layer:
         return self.raw_query.format(name_languages=(', '.join(fields)))
 
     def get_var(self, name: str) -> str:
+        if name not in self._vars:
+            raise ValueError(f'Variable {name} does not exist in layer {self.id}')
         return str(self._vars[name])
 
     @property
