@@ -124,7 +124,6 @@ class TilesTestCase(TestCase):
             self.assertEqual(ts.layers_by_id['my_id'].get_var(k), expected_vars[k])
 
     def test_layer_var(self):
-        self._assert_layer_vars(dict(custom_zoom=None))
         self._assert_layer_vars(dict(custom_zoom='14'),
                                 layer_vars=dict(custom_zoom=14))
         self._assert_layer_vars(dict(custom_zoom='12'),

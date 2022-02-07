@@ -173,9 +173,11 @@ class Layer:
             # osm_id column twice - once for feature_id, and once as an attribute
             raise ValueError('key_field_as_attribute=yes is not yet implemented')
 
+        # Compute layer variables including the override logic.
+        # Priority order (last wins):  layer, tileset global, tileset per layer, env vars
         self._vars = self.definition['layer'].get('vars', {})
         if self.tileset:
-            for name, value in self.tileset.overrides.items():
+            for name, value in self.tileset.overrides.get('vars', {}).items():
                 if name in self._vars:
                     self._vars[name] = value
         for name, value in self.overrides.get('vars', {}).items():
