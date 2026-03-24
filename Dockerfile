@@ -16,7 +16,6 @@ RUN set -eux ;\
     apt list --installed ;\
     \
     go version ;\
-    go get github.com/tools/godep ;\
     mkdir /build-bin ;\
     \
     /bin/bash -c 'echo ""; echo ""; echo "##### Build imposm3 -- $IMPOSM_REPO in version $IMPOSM_VERSION"' >&2 ;\
