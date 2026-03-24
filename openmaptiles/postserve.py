@@ -52,7 +52,7 @@ class GetReplicationStatus(RequestHandledWithCors):
         last_update_timestamp = re.match(r'timestamp=(.+)', content)[1].replace('\\', '')
         last_update_date = parse(last_update_timestamp)
         lag_minutes = (datetime.now(timezone.utc) - last_update_date).seconds / 60
-        lag_status = 'ok' if lag_minutes < 90 else 'degraded' if lag_minutes < 120 else 'ko'
+        lag_status = 'ok' if lag_minutes < 120 else 'degraded' if lag_minutes < 150 else 'ko'
         self.write(json.dumps({'timestamp': last_update_timestamp, 'lag': lag_status}))
 
 
